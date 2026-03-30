@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="KeyMatch"/>
+<meta name="theme-color" content="#185FA5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>KeyMatch — Instant Showing Requests</title>
+<style>
+:root{
+  --blue:#185FA5;--blue-dark:#0C447C;--blue-light:#E6F1FB;--blue-mid:#B5D4F4;
+  --green:#3B6D11;--green-dark:#27500A;--green-light:#EAF3DE;--green-mid:#C0DD97;
+  --amber:#854F0B;--amber-light:#FAEEDA;--amber-mid:#FAC775;
+  --red:#A32D2D;--red-light:#FCEBEB;
+  --gray:#5F5E5A;--gray-light:#F1EFE8;--gray-mid:#D3D1C7;
+  --bg:#F8F7F4;--surface:#fff;--border:rgba(0,0,0,0.11);
+  --text:#1a1a18;--text-muted:#6b6a65;--text-hint:#9a9994;
+  --radius:12px;--radius-lg:16px;--shadow:0 1px 4px rgba(0,0,0,0.07);
+  --nav-h:68px;--header-h:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:15px;overscroll-behavior:none}
+.shell{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.top-bar{flex-shrink:0;height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100}
+.top-logo{font-size:22px;font-weight:700;letter-spacing:-0.5px}.top-logo span{color:var(--blue)}
+.top-right{display:flex;align-items:center;gap:10px}
+.beta-pill{background:var(--amber-light);color:var(--amber);font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.04em}
+.install-btn{background:var(--blue);color:#fff;border:none;border-radius:99px;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;display:none}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px calc(var(--nav-h) + 16px)}
+.bottom-nav{flex-shrink:0;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:stretch;padding-bottom:env(safe-area-inset-bottom);z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:8px 4px;position:relative;border:none;background:none;color:var(--text-muted)}
+.nav-item.active{color:var(--blue)}
+.nav-item:active{background:var(--gray-light)}
+.nav-icon{font-size:22px;line-height:1}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.02em}
+.nav-dot{position:absolute;top:8px;right:calc(50% - 14px);width:8px;height:8px;border-radius:50%;background:#E24B4A;border:2px solid var(--surface)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.125rem;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:17px;font-weight:700;margin-bottom:14px}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;margin-top:20px}
+.section-label:first-child{margin-top:0}
+.empty{text-align:center;padding:40px 20px;color:var(--text-hint);font-size:14px;line-height:1.6}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px}
+.form-input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--radius);background:#fafaf8;color:var(--text);font-size:16px;font-family:inherit;transition:border-color .15s;-webkit-appearance:none}
+.form-input:focus{outline:none;border-color:var(--blue);background:#fff}
+textarea.form-input{resize:none;min-height:80px;line-height:1.5;font-size:15px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-picker{display:flex;gap:10px;margin-bottom:16px}
+.role-btn{flex:1;padding:14px 8px;border-radius:var(--radius);border:1.5px solid var(--border);background:#fafaf8;cursor:pointer;font-size:14px;font-weight:600;color:var(--text-muted);text-align:center;transition:all .15s;line-height:1.4}
+.role-btn.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.btn{padding:14px 20px;border-radius:var(--radius);border:none;cursor:pointer;font-size:16px;font-weight:700;transition:all .12s;font-family:inherit;display:block;width:100%;text-align:center}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:active{background:var(--blue-dark)}
+.btn-success{background:var(--green);color:#fff;font-size:15px}.btn-success:active{background:var(--green-dark)}
+.btn-sm{font-size:14px;padding:10px 16px;background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius);cursor:pointer;font-family:inherit;width:auto;display:inline-block}
+.btn-sm:active{background:var(--gray-light)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.badge-open{background:var(--blue-light);color:var(--blue)}
+.badge-claimed{background:var(--green-light);color:var(--green)}
+.badge-done{background:var(--amber-light);color:var(--amber)}
+.success-msg{background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius);padding:12px 14px;font-size:14px;color:var(--green);margin-top:12px;display:none;line-height:1.5}
+.notify-bar{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius);padding:12px 14px;font-size:14px;color:var(--blue);margin-bottom:14px;display:flex;align-items:center;gap:10px;line-height:1.4}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--blue);animation:pulse 1.2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
+.sms-toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:12px;right:12px;background:#1a1a18;color:#fff;padding:13px 16px;border-radius:var(--radius-lg);font-size:13px;z-index:9999;display:none;box-shadow:0 6px 24px rgba(0,0,0,0.3);line-height:1.5;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.showing-card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.125rem;margin-bottom:12px;box-shadow:var(--shadow)}
+.showing-card.urgent{border-left:4px solid var(--blue);border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.showing-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.address{font-size:15px;font-weight:700;line-height:1.3}
+.showing-meta{font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.meta-row{display:flex;align-items:center;gap:6px}
+.meta-icon{font-size:13px;width:16px;text-align:center}
+.map-box{background:var(--gray-light);border-radius:var(--radius);border:1px solid var(--border);height:180px;margin:10px 0;overflow:hidden}
+.map-inner{width:100%;height:100%;border:0}
+.chat-wrap{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px}
+.chat-header{background:#f0f7ee;padding:11px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--green-mid);color:var(--green)}
+.chat-messages{padding:14px;min-height:140px;max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.msg-row{display:flex;gap:8px;align-items:flex-end}
+.msg-row.mine{flex-direction:row-reverse}
+.msg-bubble{max-width:78%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5}
+.msg-row.theirs .msg-bubble{background:var(--gray-light);color:var(--text);border-bottom-left-radius:4px}
+.msg-row.mine .msg-bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+.msg-meta{font-size:11px;color:var(--text-hint);margin-bottom:3px}
+.msg-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0}
+.msg-row.mine .msg-avatar{background:var(--blue-dark);color:#fff}
+.chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:#fafaf8}
+.chat-input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:99px;background:#fff;color:var(--text);font-size:15px;font-family:inherit}
+.chat-input:focus{outline:none;border-color:var(--blue)}
+.chat-send{width:40px;height:40px;background:var(--blue);color:#fff;border:none;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-send:active{background:var(--blue-dark)}
+.unread-pill{background:#E24B4A;color:#fff;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700;margin-left:6px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cal-day-name{text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);padding:4px 0}
+.cal-day{text-align:center;padding:8px 2px;border-radius:var(--radius);font-size:14px;cursor:pointer;border:1.5px solid transparent;min-height:44px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cal-day:active{background:var(--blue-light)}
+.cal-day.today{font-weight:700;color:var(--blue);background:var(--blue-light)}
+.cal-day.has-showing{border-color:var(--blue-mid)}
+.cal-day.has-showing::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--blue);position:absolute;bottom:4px}
+.cal-day.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cal-day.selected::after{background:#fff}
+.cal-day.other-month{color:var(--text-hint)}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cal-nav-btn{background:var(--gray-light);border:none;border-radius:var(--radius);padding:8px 16px;cursor:pointer;font-size:18px;color:var(--text-muted);font-weight:700}
+.cal-month-label{font-size:16px;font-weight:700}
+.cal-event{background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px;margin-bottom:8px}
+.cal-event-time{font-weight:700;color:var(--blue);font-size:12px;margin-bottom:3px}
+.agent-card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem 1.125rem;margin-bottom:10px;box-shadow:var(--shadow)}
+.agent-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.agent-info{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--blue);flex-shrink:0}
+.agent-name-txt{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-sub{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.stars{display:flex;gap:3px;align-items:center}
+.star{font-size:24px;cursor:pointer;color:var(--gray-mid);transition:color .1s;line-height:1;user-select:none;padding:4px}
+.star.lit{color:#EF9F27}.star.lit-preview{color:var(--amber-mid)}
+.reviews-list{margin-top:12px}
+.review-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.review-item:last-child{border-bottom:none}
+.review-author{font-size:14px;font-weight:700;margin-bottom:3px}
+.review-text{font-size:13px;color:var(--text-muted);line-height:1.5;margin-top:4px}
+.rating-row{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.search-box{position:relative;margin-bottom:14px}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text-hint)}
+.search-input{width:100%;padding:13px 14px 13px 40px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:inherit;background:#fff;color:var(--text);-webkit-appearance:none}
+.search-input:focus{outline:none;border-color:var(--blue)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:640px;max-height:90vh;overflow-y:auto;animation:slideSheet .28s ease}
+@keyframes slideSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--gray-mid);border-radius:2px;margin:0 auto 16px}
+.notif-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.notif-item:last-child{border-bottom:none}
+.notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-sms{background:var(--green-light);color:var(--green)}
+.notif-email{background:var(--blue-light);color:var(--blue)}
+.notif-body{flex:1;min-width:0}
+.notif-label{font-weight:700;font-size:12px;margin-bottom:2px;color:var(--text-muted)}
+.notif-subject{font-weight:600;font-size:13px;margin-bottom:2px}
+.notif-msg{font-size:13px;color:var(--text-muted);line-height:1.4}
+.notif-time{font-size:11px;color:var(--text-hint);margin-top:3px}
+.info-card{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius-lg);padding:1rem 1.125rem;margin-bottom:12px}
+.info-card-title{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:6px}
+.info-card-body{font-size:13px;color:var(--blue-dark);line-height:1.6}
+.install-card{background:var(--blue);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:12px;color:#fff;display:none}
+.install-card-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.install-card-body{font-size:13px;opacity:.85;line-height:1.5;margin-bottom:14px}
+.install-card-btn{background:#fff;color:var(--blue);border:none;border-radius:var(--radius);padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.more-row{display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.more-row:last-child{border-bottom:none}
+.more-row:active{opacity:.7}
+.more-row-icon{font-size:22px;width:32px;text-align:center}
+.more-row-label{font-size:15px;font-weight:500;flex:1}
+.more-badge{background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;display:none}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:12px;background:none;border:none;font-family:inherit}
+.back-btn:active{opacity:.7}
+@media(min-width:640px){
+  .shell{max-width:440px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);box-shadow:0 0 60px rgba(0,0,0,0.08)}
+  .sms-toast{left:50%;transform:translateX(-50%);width:420px;right:auto}
+  .modal-box{max-width:440px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="top-bar">
+    <div class="top-logo">Key<span>Match</span></div>
+    <div class="top-right">
+      <div class="beta-pill">BETA</div>
+      <button class="install-btn" id="install-btn" onclick="installApp()">+ Add to Home</button>
+    </div>
+  </div>
+
+  <div class="scroll-area" id="scroll-area">
+
+    <!-- REGISTER -->
+    <div id="panel-register" class="panel active">
+      <div class="install-card" id="install-promo">
+        <div class="install-card-title">&#128241; Install KeyMatch</div>
+        <div class="install-card-body">Add to your home screen for instant access — works like a real app, no App Store needed.</div>
+        <button class="install-card-btn" onclick="installApp()">Add to Home Screen</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Create your account</div>
+        <div class="role-picker">
+          <div class="role-btn active" id="role-buyer" onclick="selectRole('buyer')">&#127968;<br/>Buyer</div>
+          <div class="role-btn" id="role-agent" onclick="selectRole('agent')">&#127981;<br/>Agent</div>
+        </div>
+        <div class="two-col">
+          <div class="form-group"><label class="form-label">First name</label><input class="form-input" id="reg-first" placeholder="Jane" autocomplete="given-name"/></div>
+          <div class="form-group"><label class="form-label">Last name</label><input class="form-input" id="reg-last" placeholder="Smith" autocomplete="family-name"/></div>
+        </div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="reg-email" placeholder="jane@email.com" autocomplete="email" inputmode="email"/></div>
+        <div class="form-group"><label class="form-label">Phone (SMS alerts)</label><input class="form-input" type="tel" id="reg-phone" placeholder="(555) 000-0000" autocomplete="tel" inputmode="tel"/></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="reg-pass" placeholder="Create a password" autocomplete="new-password"/></div>
+        <div id="agent-fields" style="display:none">
+          <div class="form-group"><label class="form-label">License number</label><input class="form-input" id="reg-license" placeholder="NY-12345678"/></div>
+          <div class="form-group"><label class="form-label">Brokerage</label><input class="form-input" id="reg-brokerage" placeholder="Coldwell Banker"/></div>
+          <div class="form-group"><label class="form-label">Cities you serve (comma-separated)</label><input class="form-input" id="reg-cities" placeholder="Albany, Schenectady, Troy"/></div>
+        </div>
+        <div id="buyer-fields" style="display:none">
+          <div class="form-group"><label class="form-label">City of interest</label><input class="form-input" id="reg-buyer-city" placeholder="Schenectady"/></div>
+        </div>
+        <button class="btn btn-primary" onclick="registerUser()" style="margin-top:6px">Create account</button>
+        <div class="success-msg" id="reg-success"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">&#128274; Beta Access</div>
+        <div class="info-card-body">SMS and email alerts are simulated and logged in Notifications. All other features work as they will in the live product.</div>
+      </div>
+    </div>
+
+    <!-- BUYER -->
+    <div id="panel-buyer" class="panel">
+      <div class="card">
+        <div class="card-title">&#127968; Request a showing</div>
+        <div class="form-group"><label class="form-label">Your name</label><input class="form-input" id="buyer-name" placeholder="Marcus Johnson" autocomplete="name"/></div>
+        <div class="form-group"><label class="form-label">Property address</label><input class="form-input" id="showing-address" placeholder="142 Elm St, Schenectady, NY" oninput="updateBuyerMap()" autocomplete="off"/></div>
+        <div class="two-col">
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="showing-date"/></div>
+          <div class="form-group"><label class="form-label">Time</label><input class="form-input" type="time" id="showing-time"/></div>
+        </div>
+        <div class="form-group"><label class="form-label">City</label><input class="form-input" id="showing-city" placeholder="Schenectady"/></div>
+        <div class="form-group"><label class="form-label">Phone (SMS updates)</label><input class="form-input" type="tel" id="buyer-phone" placeholder="(555) 000-0000" inputmode="tel"/></div>
+        <div class="form-group"><label class="form-label">Email (confirmation)</label><input class="form-input" type="email" id="buyer-email" placeholder="you@email.com" inputmode="email"/></div>
+        <div class="form-group"><label class="form-label">Notes (optional)</label><textarea class="form-input" id="showing-notes" placeholder="e.g. interested in the basement"></textarea></div>
+        <div class="map-box"><iframe id="buyer-map" class="map-inner" src="https://maps.google.com/maps?q=Schenectady+NY&output=embed&z=13"></iframe></div>
+        <button class="btn btn-primary" onclick="submitShowing()">Send showing request</button>
+        <div class="success-msg" id="showing-success">&#10003; Request sent! Agents in your area have been notified.</div>
+      </div>
+      <div class="section-label">Your requests</div>
+      <div id="buyer-requests-list"><div class="empty"><div class="empty-icon">&#128205;</div>No showing requests yet.</div></div>
+      <div class="section-label">Messages <span id="buyer-unread-indicator"></span></div>
+      <div id="buyer-chats-list"><div class="empty"><div class="empty-icon">&#128172;</div>Messages appear after an agent confirms.</div></div>
+    </div>
+
+    <!-- AGENT -->
+    <div id="panel-agent" class="panel">
+      <div id="agent-notify-bar" style="display:none">
+        <div class="notify-bar"><div class="pulse"></div><span id="notify-text">New showing request in your area!</span></div>
+      </div>
+      <div id="agent-login-card" class="card">
+        <div class="card-title">&#128203; Agent login</div>
+        <div class="form-group"><label class="form-label">Your name</label><input class="form-input" id="agent-login-name" placeholder="Sarah Chen" autocomplete="name"/></div>
+        <div class="form-group"><label class="form-label">Cities (comma-separated)</label><input class="form-input" id="agent-login-cities" placeholder="Albany, Schenectady"/></div>
+        <div class="form-group"><label class="form-label">Phone (SMS alerts)</label><input class="form-input" type="tel" id="agent-login-phone" placeholder="(555) 000-0000" inputmode="tel"/></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="agent-login-email" placeholder="agent@email.com" inputmode="email"/></div>
+        <button class="btn btn-primary" onclick="agentLogin()" style="margin-top:6px">View open requests</button>
+      </div>
+      <div id="agent-content" style="display:none">
+        <div class="section-label">Open in your area</div>
+        <div id="open-requests-list"></div>
+        <div class="section-label">Your confirmed showings</div>
+        <div id="claimed-list"></div>
+        <div class="section-label">Messages <span id="agent-unread-indicator"></span></div>
+        <div id="agent-chats-list"><div class="empty"><div class="empty-icon">&#128172;</div>Confirm a showing to start messaging.</div></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="panel-calendar" class="panel">
+      <div class="card">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calNav(-1)">&#8249;</button>
+          <div class="cal-month-label" id="cal-month-label"></div>
+          <button class="cal-nav-btn" onclick="calNav(1)">&#8250;</button>
+        </div>
+        <div class="cal-header-row">
+          <div class="cal-day-name">S</div><div class="cal-day-name">M</div><div class="cal-day-name">T</div>
+          <div class="cal-day-name">W</div><div class="cal-day-name">T</div><div class="cal-day-name">F</div><div class="cal-day-name">S</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="section-label" id="cal-events-label">Upcoming showings</div>
+      <div id="cal-events-list"><div class="empty"><div class="empty-icon">&#128197;</div>No showings scheduled yet.</div></div>
+    </div>
+
+    <!-- MORE -->
+    <div id="panel-more" class="panel">
+      <div id="more-home">
+        <div class="card" style="padding:0 1.125rem">
+          <div class="more-row" onclick="showSub('agents-dir-inner')">
+            <span class="more-row-icon">&#128101;</span>
+            <span class="more-row-label">Agent Directory</span>
+            <span>&#8250;</span>
+          </div>
+          <div class="more-row" onclick="showSub('activity-inner')">
+            <span class="more-row-icon">&#128200;</span>
+            <span class="more-row-label">Live Activity</span>
+            <span>&#8250;</span>
+          </div>
+          <div class="more-row" onclick="showSub('notifications-inner')">
+            <span class="more-row-icon">&#128276;</span>
+            <span class="more-row-label">Notifications</span>
+            <span class="more-badge" id="notif-more-badge">!</span>
+            <span>&#8250;</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">&#128274; Beta Access</div>
+          <div class="info-card-body">KeyMatch Beta — for feedback contact the founder. Not for public distribution.</div>
+        </div>
+      </div>
+
+      <div id="agents-dir-inner" style="display:none">
+        <button class="back-btn" onclick="showSub(null)">&#8592; Back</button>
+        <div class="search-box"><span class="search-icon">&#128269;</span><input class="search-input" id="agent-search" placeholder="Name, city, or brokerage..." oninput="renderAgentDir()"/></div>
+        <div id="dir-agents-list"><div class="empty"><div class="empty-icon">&#128101;</div>No agents registered yet.</div></div>
+      </div>
+
+      <div id="activity-inner" style="display:none">
+        <button class="back-btn" onclick="showSub(null)">&#8592; Back</button>
+        <div class="section-label">Registered agents</div>
+        <div id="act-agents-list"><div class="empty">No agents yet.</div></div>
+        <div class="section-label">All showings</div>
+        <div id="all-showings-list"><div class="empty">No showings yet.</div></div>
+      </div>
+
+      <div id="notifications-inner" style="display:none">
+        <button class="back-btn" onclick="showSub(null)">&#8592; Back</button>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">In the live app these fire as real SMS and email. During beta they're logged here exactly as they'd be sent.</div>
+          <div id="notif-log"><div class="empty">No notifications sent yet.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- scroll-area -->
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-register" onclick="switchNav('register')">
+      <div class="nav-icon">&#128100;</div><div class="nav-label">Register</div>
+    </button>
+    <button class="nav-item" id="nav-buyer" onclick="switchNav('buyer')">
+      <div class="nav-icon">&#127968;</div><div class="nav-label">Buyer</div>
+    </button>
+    <button class="nav-item" id="nav-agent" onclick="switchNav('agent')">
+      <div class="nav-icon">&#128203;</div><div class="nav-label">Agent</div>
+    </button>
+    <button class="nav-item" id="nav-calendar" onclick="switchNav('calendar')">
+      <div class="nav-icon">&#128197;</div><div class="nav-label">Calendar</div>
+    </button>
+    <button class="nav-item" id="nav-more" onclick="switchNav('more')">
+      <div class="nav-icon">&#9776;</div><div class="nav-label">More</div>
+    </button>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="review-modal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="card-title" id="review-modal-title">Leave a review</div>
+    <div class="form-group"><label class="form-label">Your name</label><input class="form-input" id="rev-author" placeholder="Your name" autocomplete="name"/></div>
+    <div class="form-group"><label class="form-label">Rating</label>
+      <div class="stars" id="star-input">
+        <span class="star" onclick="setRating(1)" onmouseover="previewRating(1)" onmouseout="clearPreview()">&#9733;</span>
+        <span class="star" onclick="setRating(2)" onmouseover="previewRating(2)" onmouseout="clearPreview()">&#9733;</span>
+        <span class="star" onclick="setRating(3)" onmouseover="previewRating(3)" onmouseout="clearPreview()">&#9733;</span>
+        <span class="star" onclick="setRating(4)" onmouseover="previewRating(4)" onmouseout="clearPreview()">&#9733;</span>
+        <span class="star" onclick="setRating(5)" onmouseover="previewRating(5)" onmouseout="clearPreview()">&#9733;</span>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Your review</label><textarea class="form-input" id="rev-text" placeholder="How was your experience?" rows="3"></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button class="btn btn-success" onclick="submitReview()" style="flex:1;width:auto">Submit review</button>
+      <button class="btn btn-sm" onclick="closeModal('review-modal')" style="flex:1">Cancel</button>
+    </div>
+    <div class="success-msg" id="rev-success">&#10003; Review submitted! Thank you.</div>
+  </div>
+</div>
+
+<div class="sms-toast" id="sms-toast"></div>
+
+<script>
+var S={role:'buyer',agents:[],buyers:[],showings:[],threads:{},notifications:[],agentName:'',agentCities:[],agentPhone:'',agentEmail:'',selectedRating:0,reviewingAgent:null,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),calSelectedDate:null};
+var deferredInstall=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e;document.getElementById('install-btn').style.display='block';document.getElementById('install-promo').style.display='block';});
+function installApp(){if(deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.then(function(){deferredInstall=null;document.getElementById('install-btn').style.display='none';document.getElementById('install-promo').style.display='none';});}else{alert('To install on iPhone: tap the Share button in Safari, then "Add to Home Screen".\n\nOn Android: tap the menu (3 dots) then "Add to Home Screen".');}}
+
+function switchNav(name){
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active');
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('scroll-area').scrollTop=0;
+  if(name==='agent'){renderAgentPanel();renderAgentChats();}
+  if(name==='buyer'){renderBuyerRequests();renderBuyerChats();}
+  if(name==='calendar')renderCalendar();
+  if(name==='more'){showSub(null);}
+}
+function showSub(id){
+  ['agents-dir-inner','activity-inner','notifications-inner','more-home'].forEach(function(i){var el=document.getElementById(i);if(el)el.style.display='none';});
+  if(id){var el=document.getElementById(id);if(el)el.style.display='block';if(id==='agents-dir-inner')renderAgentDir();if(id==='activity-inner')renderActivity();if(id==='notifications-inner')renderNotifications();}
+  else{var mh=document.getElementById('more-home');if(mh)mh.style.display='block';}
+  document.getElementById('scroll-area').scrollTop=0;
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function selectRole(r){S.role=r;document.getElementById('role-buyer').classList.toggle('active',r==='buyer');document.getElementById('role-agent').classList.toggle('active',r==='agent');document.getElementById('agent-fields').style.display=r==='agent'?'block':'none';document.getElementById('buyer-fields').style.display=r==='buyer'?'block':'none';}
+selectRole('buyer');
+
+function registerUser(){
+  var first=document.getElementById('reg-first').value.trim(),last=document.getElementById('reg-last').value.trim(),email=document.getElementById('reg-email').value.trim(),phone=document.getElementById('reg-phone').value.trim();
+  if(!first||!last||!email){alert('Please fill in your name and email.');return;}
+  var msg=document.getElementById('reg-success');
+  if(S.role==='agent'){
+    var cities=document.getElementById('reg-cities').value.split(',').map(function(c){return c.trim();}).filter(Boolean);
+    var brok=document.getElementById('reg-brokerage').value.trim(),lic=document.getElementById('reg-license').value.trim();
+    S.agents.push({name:first+' '+last,email:email,phone:phone,cities:cities,brokerage:brok,license:lic,reviews:[]});
+    msg.textContent='Agent account created! Watching: '+(cities.join(', ')||'your areas')+'.';
+    sendNotif('email',email,first+' '+last,'Welcome to KeyMatch','Your agent account is active. You\'ll receive SMS and email alerts for showing requests in: '+(cities.join(', ')||'your areas')+'.');
+  } else {
+    S.buyers.push({name:first+' '+last,email:email,phone:phone});
+    msg.textContent='Buyer account created! Tap Buyer below to request a showing.';
+    sendNotif('email',email,first+' '+last,'Welcome to KeyMatch','Your buyer account is ready. Submit a showing request and we\'ll notify you when an agent confirms.');
+  }
+  msg.style.display='block';setTimeout(function(){msg.style.display='none';},5000);
+}
+
+function updateBuyerMap(){var addr=document.getElementById('showing-address').value.trim();if(addr.length>5)document.getElementById('buyer-map').src='https://maps.google.com/maps?q='+encodeURIComponent(addr)+'&output=embed&z=15';}
+
+function submitShowing(){
+  var addr=document.getElementById('showing-address').value.trim(),date=document.getElementById('showing-date').value,time=document.getElementById('showing-time').value,city=document.getElementById('showing-city').value.trim(),buyer=document.getElementById('buyer-name').value.trim(),notes=document.getElementById('showing-notes').value.trim(),bPhone=document.getElementById('buyer-phone').value.trim(),bEmail=document.getElementById('buyer-email').value.trim();
+  if(!addr||!date||!time||!city||!buyer){alert('Please fill in all required fields.');return;}
+  var id=Date.now();
+  S.showings.push({id:id,buyer:buyer,buyerPhone:bPhone,buyerEmail:bEmail,address:addr,date:date,time:time,city:city,notes:notes,status:'open',claimedBy:null,claimedAt:null,reviewed:false});
+  S.threads[id]=[];
+  document.getElementById('showing-success').style.display='block';
+  setTimeout(function(){document.getElementById('showing-success').style.display='none';},6000);
+  S.agents.forEach(function(a){if(a.cities.some(function(c){return c.toLowerCase()===city.toLowerCase();})){sendNotif('sms',a.phone,a.name,'New Showing Request','New showing in '+city+'! '+addr+' on '+fmtDate(date)+' at '+fmtTime(time)+'. Open KeyMatch to claim it first.');sendNotif('email',a.email,a.name,'New Showing in '+city,'Buyer needs a showing at '+addr+' on '+fmtDate(date)+' at '+fmtTime(time)+'. Log in to claim before another agent does.');}});
+  if(bEmail)sendNotif('email',bEmail,buyer,'Showing Request Received','Your request for '+addr+' on '+fmtDate(date)+' at '+fmtTime(time)+' is live. We\'ll notify you when an agent confirms.');
+  if(bPhone)sendNotif('sms',bPhone,buyer,'KeyMatch: Showing request sent for '+addr+'. We\'ll text you when an agent confirms!','');
+  checkNotify(city);renderBuyerRequests();renderCalendar();
+  ['showing-address','showing-date','showing-time','showing-city','showing-notes'].forEach(function(i){document.getElementById(i).value='';});
+}
+
+function checkNotify(city){if(S.agentCities.some(function(c){return c.toLowerCase()===city.toLowerCase();})){document.getElementById('notify-text').textContent='New showing in '+city+' — claim it first!';document.getElementById('agent-notify-bar').style.display='block';renderAgentPanel();setTimeout(function(){document.getElementById('agent-notify-bar').style.display='none';},10000);}}
+
+function agentLogin(){
+  var name=document.getElementById('agent-login-name').value.trim(),cities=document.getElementById('agent-login-cities').value.split(',').map(function(c){return c.trim();}).filter(Boolean);
+  if(!name){alert('Please enter your name.');return;}
+  S.agentName=name;S.agentCities=cities;S.agentPhone=document.getElementById('agent-login-phone').value.trim();S.agentEmail=document.getElementById('agent-login-email').value.trim();
+  document.getElementById('agent-content').style.display='block';document.getElementById('agent-login-card').style.display='none';
+  renderAgentPanel();renderAgentChats();
+}
+
+function claimShowing(id){
+  var s=S.showings.find(function(x){return x.id===id;});
+  if(!s||s.status!=='open'){alert('This showing has already been claimed.');return;}
+  s.status='claimed';s.claimedBy=S.agentName||'Agent';s.claimedAt=nowTime();
+  if(!S.threads[id])S.threads[id]=[];
+  S.threads[id].push({from:'agent',sender:s.claimedBy,text:'Hi '+s.buyer+'! I\'m '+s.claimedBy+' and I\'ve confirmed your showing at '+s.address+' on '+fmtDate(s.date)+' at '+fmtTime(s.time)+'. I\'ll meet you at the property — feel free to message me here!',time:nowTime(),read:false});
+  if(s.buyerPhone)sendNotif('sms',s.buyerPhone,s.buyer,s.claimedBy+' confirmed your showing!',s.claimedBy+' will meet you at '+s.address+' on '+fmtDate(s.date)+' at '+fmtTime(s.time)+'. Open KeyMatch to message your agent.');
+  if(s.buyerEmail)sendNotif('email',s.buyerEmail,s.buyer,'Showing Confirmed — '+s.address,s.claimedBy+' confirmed your showing at '+s.address+' on '+fmtDate(s.date)+' at '+fmtTime(s.time)+'. Log in to KeyMatch to message them.');
+  renderAgentPanel();renderBuyerRequests();renderBuyerChats();renderAgentChats();renderCalendar();updateUnread();
+  showToast('&#10003; Showing claimed! Buyer notified by SMS & email.');
+}
+
+function markComplete(id){
+  var s=S.showings.find(function(x){return x.id===id;});
+  if(s){s.status='complete';if(s.buyerPhone)sendNotif('sms',s.buyerPhone,s.buyer,'Showing complete','Thanks for using KeyMatch! Please leave a review for '+s.claimedBy+' in the app.');if(s.buyerEmail)sendNotif('email',s.buyerEmail,s.buyer,'How was your showing?','Your showing at '+s.address+' is complete. Rate '+s.claimedBy+' in KeyMatch.');}
+  renderAgentPanel();renderBuyerRequests();renderCalendar();
+}
+
+function sendMsg(showingId,role){
+  var el=document.getElementById('chat-input-'+showingId+'-'+role);if(!el)return;var text=el.value.trim();if(!text)return;
+  var s=S.showings.find(function(x){return x.id===showingId;});if(!s)return;
+  var sender=role==='agent'?(S.agentName||'Agent'):s.buyer;
+  if(!S.threads[showingId])S.threads[showingId]=[];
+  S.threads[showingId].push({from:role,sender:sender,text:text,time:nowTime(),read:false});el.value='';
+  if(role==='buyer'&&s.claimedBy){var agent=S.agents.find(function(a){return a.name===s.claimedBy;});if(agent&&agent.phone)sendNotif('sms',agent.phone,agent.name,'Message from '+s.buyer,'"'+text+'" — reply in KeyMatch.');}
+  if(role==='agent'&&s.buyerPhone)sendNotif('sms',s.buyerPhone,s.buyer,'Message from '+s.claimedBy,'"'+text+'" — reply in KeyMatch.');
+  renderChatThread(showingId,role);updateUnread();
+}
+
+function renderChatThread(showingId,perspective){
+  var el=document.getElementById('chat-msgs-'+showingId+'-'+perspective);if(!el)return;
+  var msgs=S.threads[showingId]||[];msgs.forEach(function(m){if(m.from!==perspective)m.read=true;});
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;color:var(--text-hint);font-size:14px;padding:20px">No messages yet. Say hello!</div>';return;}
+  el.innerHTML=msgs.map(function(m){var mine=m.from===perspective;var initials=m.sender.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2);return '<div class="msg-row '+(mine?'mine':'theirs')+'"><div class="msg-avatar">'+initials+'</div><div><div class="msg-meta">'+(mine?'You':escHtml(m.sender))+' &middot; '+m.time+'</div><div class="msg-bubble">'+escHtml(m.text)+'</div></div></div>';}).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function buildChat(s,perspective){
+  var other=perspective==='buyer'?s.claimedBy:s.buyer;
+  var unread=(S.threads[s.id]||[]).filter(function(m){return m.from!==perspective&&!m.read;}).length;
+  var unreadBadge=unread>0?'<span class="unread-pill">'+unread+'</span>':'';
+  return '<div class="chat-wrap"><div class="chat-header">&#128274; Secure thread with '+escHtml(other)+unreadBadge+'</div><div class="chat-messages" id="chat-msgs-'+s.id+'-'+perspective+'"></div><div class="chat-input-row"><input class="chat-input" id="chat-input-'+s.id+'-'+perspective+'" placeholder="Message..." onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMsg('+s.id+',\''+perspective+'\')}"/><button class="chat-send" onclick="sendMsg('+s.id+',\''+perspective+'\')">&#8593;</button></div></div>';
+}
+
+function updateUnread(){
+  var bu=0,au=0;
+  S.showings.forEach(function(s){(S.threads[s.id]||[]).forEach(function(m){if(!m.read){if(m.from==='agent')bu++;if(m.from==='buyer'&&s.claimedBy===S.agentName)au++;}});});
+  var bi=document.getElementById('buyer-unread-indicator'),ai=document.getElementById('agent-unread-indicator');
+  if(bi)bi.innerHTML=bu>0?'<span class="unread-pill">'+bu+'</span>':'';
+  if(ai)ai.innerHTML=au>0?'<span class="unread-pill">'+au+'</span>':'';
+  var nb=document.getElementById('nav-buyer'),na=document.getElementById('nav-agent');
+  if(nb){var d=nb.querySelector('.nav-dot');if(!d&&bu>0){var dot=document.createElement('div');dot.className='nav-dot';nb.appendChild(dot);}else if(d&&!bu)d.remove();}
+  if(na){var da=na.querySelector('.nav-dot');if(!da&&au>0){var dot2=document.createElement('div');dot2.className='nav-dot';na.appendChild(dot2);}else if(da&&!au)da.remove();}
+}
+
+function renderBuyerRequests(){
+  var el=document.getElementById('buyer-requests-list');if(!S.showings.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128205;</div>No requests yet.</div>';return;}
+  el.innerHTML=S.showings.map(function(s){
+    var badge=s.status==='open'?'<span class="badge badge-open">Awaiting agent</span>':s.status==='claimed'?'<span class="badge badge-claimed">Confirmed</span>':'<span class="badge badge-done">Complete</span>';
+    var detail=s.status==='open'?'<div style="font-size:13px;color:var(--text-muted);margin-top:8px">&#128337; Notifying agents in '+escHtml(s.city)+'...</div>':'<div style="font-size:13px;color:var(--green);margin-top:8px;font-weight:600">&#10003; '+escHtml(s.claimedBy)+' will meet you at the property.</div>';
+    var mapUrl='https://maps.google.com/maps?q='+encodeURIComponent(s.address)+'&output=embed&z=15';
+    var reviewBtn=s.status==='complete'&&!s.reviewed&&s.claimedBy?'<button class="btn btn-sm" onclick="openReviewModal(\''+escAttr(s.claimedBy)+'\','+s.id+')" style="margin-top:12px;display:block;width:100%;text-align:center">&#9733; Review '+escAttr(s.claimedBy)+'</button>':'';
+    return '<div class="showing-card"><div class="showing-header"><div class="address">'+escHtml(s.address)+'</div>'+badge+'</div><div class="showing-meta"><div class="meta-row"><span class="meta-icon">&#128197;</span>'+fmtDate(s.date)+'</div><div class="meta-row"><span class="meta-icon">&#128336;</span>'+fmtTime(s.time)+'</div><div class="meta-row"><span class="meta-icon">&#128205;</span>'+escHtml(s.city)+'</div></div><div class="map-box"><iframe class="map-inner" src="'+mapUrl+'"></iframe></div>'+detail+reviewBtn+'</div>';
+  }).join('');
+}
+
+function renderBuyerChats(){
+  var el=document.getElementById('buyer-chats-list');
+  var claimed=S.showings.filter(function(s){return s.status==='claimed'||s.status==='complete';});
+  if(!claimed.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128172;</div>Messages appear after an agent confirms.</div>';return;}
+  el.innerHTML=claimed.map(function(s){return '<div class="showing-card"><div style="font-size:15px;font-weight:700;margin-bottom:3px">'+escHtml(s.address)+'</div><div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">'+fmtDate(s.date)+' at '+fmtTime(s.time)+'</div>'+buildChat(s,'buyer')+'</div>';}).join('');
+  claimed.forEach(function(s){renderChatThread(s.id,'buyer');});updateUnread();
+}
+
+function renderAgentPanel(){
+  if(!S.agentName)return;
+  var openEl=document.getElementById('open-requests-list'),clEl=document.getElementById('claimed-list');
+  var open=S.showings.filter(function(s){return s.status==='open'&&S.agentCities.some(function(c){return c.toLowerCase()===s.city.toLowerCase();});});
+  var claimed=S.showings.filter(function(s){return(s.status==='claimed'||s.status==='complete')&&s.claimedBy===S.agentName;});
+  if(!open.length){openEl.innerHTML='<div class="empty"><div class="empty-icon">&#9989;</div>No open requests in your area.</div>';}
+  else{openEl.innerHTML=open.map(function(s){var mapUrl='https://maps.google.com/maps?q='+encodeURIComponent(s.address)+'&output=embed&z=15';return '<div class="showing-card urgent"><div class="showing-header"><div class="address">'+escHtml(s.address)+'</div><span class="badge badge-open">Open</span></div><div class="showing-meta"><div class="meta-row"><span class="meta-icon">&#128100;</span>'+escHtml(s.buyer)+'</div><div class="meta-row"><span class="meta-icon">&#128197;</span>'+fmtDate(s.date)+' at '+fmtTime(s.time)+'</div><div class="meta-row"><span class="meta-icon">&#128205;</span>'+escHtml(s.city)+'</div>'+(s.notes?'<div class="meta-row"><span class="meta-icon">&#128221;</span>'+escHtml(s.notes)+'</div>':'')+'</div><div class="map-box"><iframe class="map-inner" src="'+mapUrl+'"></iframe></div><button class="btn btn-success" onclick="claimShowing('+s.id+')">&#10003; Accept — I\'ll do this showing</button></div>';}).join('');}
+  if(!claimed.length){clEl.innerHTML='<div class="empty"><div class="empty-icon">&#128197;</div>No confirmed showings yet.</div>';}
+  else{clEl.innerHTML=claimed.map(function(s){var mapUrl='https://maps.google.com/maps?q='+encodeURIComponent(s.address)+'&output=embed&z=15';var badge=s.status==='complete'?'<span class="badge badge-done">Complete</span>':'<span class="badge badge-claimed">Confirmed</span>';var btn=s.status==='claimed'?'<button class="btn btn-sm" onclick="markComplete('+s.id+')" style="margin-top:10px;width:100%;text-align:center;display:block">Mark as complete</button>':'';return '<div class="showing-card"><div class="showing-header"><div class="address">'+escHtml(s.address)+'</div>'+badge+'</div><div class="showing-meta"><div class="meta-row"><span class="meta-icon">&#128100;</span>'+escHtml(s.buyer)+'</div><div class="meta-row"><span class="meta-icon">&#128197;</span>'+fmtDate(s.date)+' at '+fmtTime(s.time)+'</div></div><div class="map-box"><iframe class="map-inner" src="'+mapUrl+'"></iframe></div>'+btn+'</div>';}).join('');}
+}
+
+function renderAgentChats(){
+  if(!S.agentName)return;var el=document.getElementById('agent-chats-list');
+  var mine=S.showings.filter(function(s){return(s.status==='claimed'||s.status==='complete')&&s.claimedBy===S.agentName;});
+  if(!mine.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128172;</div>Confirm a showing to start messaging.</div>';return;}
+  el.innerHTML=mine.map(function(s){return '<div class="showing-card"><div style="font-size:15px;font-weight:700;margin-bottom:3px">'+escHtml(s.address)+'</div><div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Buyer: '+escHtml(s.buyer)+'</div>'+buildChat(s,'agent')+'</div>';}).join('');
+  mine.forEach(function(s){renderChatThread(s.id,'agent');});updateUnread();
+}
+
+function renderCalendar(){
+  var y=S.calYear,m=S.calMonth;
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent=months[m]+' '+y;
+  var firstDay=new Date(y,m,1).getDay(),daysInMonth=new Date(y,m+1,0).getDate();
+  var today=new Date(),todayStr=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  var showingDates={};S.showings.forEach(function(s){if(s.date)showingDates[s.date]=(showingDates[s.date]||0)+1;});
+  var html='';
+  for(var i=0;i<firstDay;i++){var prev=new Date(y,m,-(firstDay-i-1));html+='<div class="cal-day other-month">'+prev.getDate()+'</div>';}
+  for(var d=1;d<=daysInMonth;d++){var dateStr=y+'-'+pad(m+1)+'-'+pad(d);var cls='cal-day';if(dateStr===todayStr)cls+=' today';if(showingDates[dateStr])cls+=' has-showing';if(dateStr===S.calSelectedDate)cls+=' selected';html+='<div class="'+cls+'" onclick="calSelectDate(\''+dateStr+'\')">'+d+'</div>';}
+  document.getElementById('cal-grid').innerHTML=html;renderCalEvents(S.calSelectedDate);
+}
+function calSelectDate(d){S.calSelectedDate=d;renderCalendar();}
+function calNav(dir){S.calMonth+=dir;if(S.calMonth>11){S.calMonth=0;S.calYear++;}if(S.calMonth<0){S.calMonth=11;S.calYear--;}renderCalendar();}
+function renderCalEvents(dateStr){
+  var label=document.getElementById('cal-events-label'),el=document.getElementById('cal-events-list');
+  var todayStr=new Date().toISOString().split('T')[0];
+  var filtered=dateStr?S.showings.filter(function(s){return s.date===dateStr;}):S.showings.filter(function(s){return s.date>=todayStr;}).sort(function(a,b){return a.date>b.date?1:-1;});
+  label.textContent=dateStr?'Showings on '+fmtDate(dateStr):'Upcoming showings';
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128197;</div>'+(dateStr?'No showings on this date.':'No upcoming showings.')+'</div>';return;}
+  el.innerHTML=filtered.map(function(s){var c=s.status==='open'?'var(--blue)':s.status==='claimed'?'var(--green)':'var(--amber)';return '<div class="cal-event" style="border-left-color:'+c+'"><div class="cal-event-time">'+fmtDate(s.date)+' at '+fmtTime(s.time)+'</div><div style="font-size:15px;font-weight:700;margin:3px 0">'+escHtml(s.address)+'</div><div style="font-size:13px;color:var(--text-muted)">'+escHtml(s.buyer)+(s.claimedBy?' &middot; '+escHtml(s.claimedBy):'')+'</div></div>';}).join('');
+}
+
+function renderAgentDir(){
+  var el=document.getElementById('dir-agents-list');if(!el)return;
+  var searchEl=document.getElementById('agent-search');var q=searchEl?searchEl.value.trim().toLowerCase():'';
+  var filtered=S.agents.filter(function(a){if(!q)return true;return a.name.toLowerCase().includes(q)||a.cities.join(' ').toLowerCase().includes(q)||(a.brokerage||'').toLowerCase().includes(q);});
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128101;</div>'+(S.agents.length?'No agents match.':'No agents registered yet.')+'</div>';return;}
+  el.innerHTML=filtered.map(function(a){
+    var realIdx=S.agents.indexOf(a);var initials=a.name.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2);
+    var reviews=a.reviews||[];var avg=reviews.length?Math.round(reviews.reduce(function(s,r){return s+r.rating;},0)/reviews.length*10)/10:null;
+    var starsHtml=renderStarsDisplay(avg||0);
+    var reviewsHtml=reviews.length?reviews.map(function(r){return '<div class="review-item"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="review-author">'+escHtml(r.author)+'</div>'+renderStarsDisplay(r.rating)+'</div><div class="review-text">'+escHtml(r.text)+'</div><div style="font-size:11px;color:var(--text-hint);margin-top:3px">'+r.date+'</div></div>';}).join(''):'<div style="font-size:13px;color:var(--text-hint);padding:8px 0">No reviews yet.</div>';
+    return '<div class="agent-card"><div class="agent-info"><div class="avatar">'+initials+'</div><div style="min-width:0"><div class="agent-name-txt">'+escHtml(a.name)+'</div><div class="agent-sub">'+(a.brokerage?escHtml(a.brokerage)+' &middot; ':'')+a.cities.join(', ')+'</div></div></div><div class="rating-row" style="margin-top:10px">'+starsHtml+'<span style="font-size:13px;color:var(--text-muted)">'+(avg?avg+' ('+reviews.length+')':'No reviews')+'</span></div><button class="btn btn-sm" onclick="openReviewModalByAgent('+realIdx+')" style="width:100%;text-align:center;display:block;margin-top:8px">&#9733; Write a review</button><div class="reviews-list">'+reviewsHtml+'</div></div>';
+  }).join('');
+}
+
+function renderStarsDisplay(rating){var h='<div class="stars">';for(var i=1;i<=5;i++)h+='<span class="star'+(i<=Math.round(rating)?' lit':'')+'" style="cursor:default;font-size:16px;padding:2px">&#9733;</span>';return h+'</div>';}
+
+function openReviewModal(agentName,showingId){S.reviewingAgent={name:agentName,showingId:showingId,agentIdx:S.agents.findIndex(function(a){return a.name===agentName;})};document.getElementById('review-modal-title').textContent='Review '+agentName;S.selectedRating=0;updateStarInput();document.getElementById('rev-author').value='';document.getElementById('rev-text').value='';document.getElementById('rev-success').style.display='none';document.getElementById('review-modal').classList.add('open');}
+function openReviewModalByAgent(idx){var a=S.agents[idx];S.reviewingAgent={name:a.name,showingId:null,agentIdx:idx};document.getElementById('review-modal-title').textContent='Review '+a.name;S.selectedRating=0;updateStarInput();document.getElementById('rev-author').value='';document.getElementById('rev-text').value='';document.getElementById('rev-success').style.display='none';document.getElementById('review-modal').classList.add('open');}
+function setRating(v){S.selectedRating=v;updateStarInput();}
+function previewRating(v){document.querySelectorAll('#star-input .star').forEach(function(s,i){s.classList.toggle('lit-preview',i<v);});}
+function clearPreview(){updateStarInput();}
+function updateStarInput(){document.querySelectorAll('#star-input .star').forEach(function(s,i){s.classList.toggle('lit',i<S.selectedRating);s.classList.remove('lit-preview');});}
+function submitReview(){
+  var author=document.getElementById('rev-author').value.trim(),text=document.getElementById('rev-text').value.trim();
+  if(!author||!S.selectedRating){alert('Please enter your name and a rating.');return;}
+  var rev={author:author,rating:S.selectedRating,text:text||'',date:new Date().toLocaleDateString()};
+  if(S.reviewingAgent&&S.reviewingAgent.agentIdx>=0)S.agents[S.reviewingAgent.agentIdx].reviews.push(rev);
+  if(S.reviewingAgent&&S.reviewingAgent.showingId){var s=S.showings.find(function(x){return x.id===S.reviewingAgent.showingId;});if(s)s.reviewed=true;}
+  document.getElementById('rev-success').style.display='block';
+  setTimeout(function(){closeModal('review-modal');renderAgentDir();renderBuyerRequests();},1800);
+}
+
+function sendNotif(type,contact,name,subject,body){S.notifications.unshift({type:type,contact:contact||'—',name:name,subject:subject,body:body,time:nowTime(),date:new Date().toLocaleDateString()});if(type==='sms')showToast('&#128241; SMS to '+escHtml(name)+': '+(body||subject).slice(0,70)+'...');var badge=document.getElementById('notif-more-badge');if(badge)badge.style.display='inline-block';}
+function showToast(msg){var t=document.getElementById('sms-toast');t.innerHTML=msg;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.display='none';},4500);}
+function renderNotifications(){
+  var el=document.getElementById('notif-log');if(!el)return;
+  if(!S.notifications.length){el.innerHTML='<div class="empty">No notifications sent yet.</div>';return;}
+  el.innerHTML=S.notifications.map(function(n){var icon=n.type==='sms'?'&#128241;':'&#9993;';var cls=n.type==='sms'?'notif-sms':'notif-email';return '<div class="notif-item"><div class="notif-icon '+cls+'">'+icon+'</div><div class="notif-body"><div class="notif-label">'+n.type.toUpperCase()+' to '+escHtml(n.name)+(n.contact&&n.contact!=='—'?' ('+escHtml(n.contact)+')':'')+'</div><div class="notif-subject">'+escHtml(n.subject)+'</div><div class="notif-msg">'+escHtml(n.body)+'</div><div class="notif-time">'+n.date+' at '+n.time+'</div></div></div>';}).join('');
+}
+
+function renderActivity(){
+  var aEl=document.getElementById('act-agents-list'),sEl=document.getElementById('all-showings-list');if(!aEl||!sEl)return;
+  if(!S.agents.length){aEl.innerHTML='<div class="empty">No agents yet.</div>';}
+  else{aEl.innerHTML=S.agents.map(function(a){var initials=a.name.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2);var avg=a.reviews.length?(a.reviews.reduce(function(s,r){return s+r.rating;},0)/a.reviews.length).toFixed(1):null;return '<div class="agent-card"><div class="agent-row"><div class="agent-info"><div class="avatar">'+initials+'</div><div style="min-width:0"><div class="agent-name-txt">'+escHtml(a.name)+'</div><div class="agent-sub">'+(a.brokerage?escHtml(a.brokerage)+' &middot; ':'')+a.cities.join(', ')+'</div></div></div>'+(avg?'<div style="color:var(--amber);font-weight:700;font-size:15px;flex-shrink:0">&#9733; '+avg+'</div>':'')+'</div></div>';}).join('');}
+  if(!S.showings.length){sEl.innerHTML='<div class="empty">No showings yet.</div>';}
+  else{sEl.innerHTML=S.showings.map(function(s){var badge=s.status==='open'?'<span class="badge badge-open">Open</span>':s.status==='claimed'?'<span class="badge badge-claimed">Claimed</span>':'<span class="badge badge-done">Complete</span>';return '<div class="showing-card"><div class="showing-header"><div class="address">'+escHtml(s.address)+'</div>'+badge+'</div><div class="showing-meta"><div class="meta-row"><span class="meta-icon">&#128100;</span>'+escHtml(s.buyer)+'</div><div class="meta-row"><span class="meta-icon">&#128197;</span>'+fmtDate(s.date)+' at '+fmtTime(s.time)+'</div>'+(s.claimedBy?'<div class="meta-row"><span class="meta-icon">&#127981;</span>'+escHtml(s.claimedBy)+'</div>':'')+'</div></div>';}).join('');}
+}
+
+function escHtml(t){if(!t)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(t){if(!t)return'';return String(t).replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+function fmtDate(d){if(!d)return'';var p=d.split('-');return p[1]+'/'+p[2]+'/'+p[0];}
+function fmtTime(t){if(!t)return'';var p=t.split(':');var h=parseInt(p[0]),m=p[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m+' '+ap;}
+function nowTime(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function pad(n){return n<10?'0'+n:String(n);}
+
+var dd=document.getElementById('showing-date');if(dd)dd.min=new Date().toISOString().split('T')[0];
+renderCalendar();
+showSub(null);
+document.getElementById('review-modal').addEventListener('click',function(e){if(e.target===this)closeModal('review-modal');});
+</script>
+</body>
+</html>
